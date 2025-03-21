@@ -1,0 +1,12 @@
+{
+    "RNN_Pretrained=True": {
+        "Accuracy": 1.0,
+        "F1-score": 1.0
+    },
+    "RNN_Pretrained=False": {
+        "Accuracy": 1.0,
+        "F1-score": 1.0
+    },
+    "observation": "Both approaches perform similarly on this dataset.",
+    "timestamp": "20250321_120840"
+}
