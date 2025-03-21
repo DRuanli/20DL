@@ -13,7 +13,7 @@ from data import load_and_process_data
 from model import RNNModel
 
 
-def train_and_evaluate(model, train_loader, test_loader, epochs=100, lr=0.001, device="cpu"):
+def train_and_evaluate(model, train_loader, test_loader, epochs=10, lr=0.001, device="cpu"):
     """
     Train and evaluate the sentiment analysis model.
 

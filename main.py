@@ -244,8 +244,8 @@ def display_results():
         print_colored("┌─────────────────────┬───────────────────┬───────────────────┐", "cyan")
         print_colored("│ Model               │ Accuracy          │ F1-score          │", "cyan")
         print_colored("├─────────────────────┼───────────────────┼───────────────────┤", "cyan")
-        print_colored(f"│ Pretrained GloVe    │ {pre_acc:.4f}      │ {pre_f1:.4f}      │", "cyan")
-        print_colored(f"│ Scratch Embeddings  │ {scratch_acc:.4f}  │ {scratch_f1:.4f}  │", "cyan")
+        print_colored(f"│ Pretrained GloVe    │ {pre_acc:.4f}            │ {pre_f1:.4f}            │", "cyan")
+        print_colored(f"│ Scratch Embeddings  │ {scratch_acc:.4f}            │ {scratch_f1:.4f}            │", "cyan")
         print_colored("└─────────────────────┴───────────────────┴───────────────────┘", "cyan")
 
         # Display observation
@@ -286,7 +286,6 @@ def next_steps():
     print("\n3. Submission deadline: March 28, 2025 (11:59 PM)")
 
     print_colored("\nGood luck with your assignment! 🎓", "green")
-
 
 def main():
     """Main execution function"""
