@@ -172,7 +172,7 @@ def main():
     embedding_dim = 100  # 100D embeddings (try 50 if resources are limited)
     hidden_dim = 128  # 128 hidden units (reduce to 64 if necessary)
     output_dim = 3  # 3 classes: Positive, Negative, Neutral
-    epochs = 100  # 10 epochs
+    epochs = 10  # 10 epochs
 
     # Dictionary to store results
     results = {}
