@@ -1,81 +1,77 @@
 import torch
 import torch.nn as nn
-import numpy as np
-import os
+import torchtext.vocab as vocab
 
 
 class RNNModel(nn.Module):
     def __init__(self, vocab_size, embedding_dim=100, hidden_dim=128,
                  output_dim=3, pretrained=False):
+        """
+        Initialize the RNN model for sentiment analysis.
+
+        Args:
+            vocab_size: Size of the vocabulary
+            embedding_dim: Dimension of word embeddings (default: 100)
+            hidden_dim: Number of hidden units in RNN (default: 128)
+            output_dim: Number of output classes (default: 3 for Positive/Negative/Neutral)
+            pretrained: Whether to use pretrained GloVe embeddings (default: False)
+        """
         super().__init__()
+        self.pretrained = pretrained
 
         # Embedding layer
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
 
-        # Load pretrained GloVe embeddings if specified
+        # Initialize with pretrained GloVe embeddings if specified
         if pretrained:
-            # We'll implement a custom GloVe loader instead of using torchtext
-            self.load_glove_embeddings(vocab_size, embedding_dim)
+            try:
+                print("Loading GloVe embeddings...")
+                glove = vocab.GloVe(name='6B', dim=embedding_dim)
 
-        # RNN layers for text and context
+                # Check if vocab_size exceeds GloVe vocabulary size
+                if vocab_size > glove.vectors.shape[0]:
+                    raise ValueError(f"vocab_size exceeds GloVe vocabulary size!")
+
+                # Copy the first vocab_size vectors from GloVe
+                self.embedding.weight.data.copy_(glove.vectors[:vocab_size])
+                print(f"Successfully loaded pretrained GloVe embeddings.")
+            except Exception as e:
+                print(f"Error loading GloVe embeddings: {e}")
+                print("Falling back to randomly initialized embeddings.")
+
+        # RNN layer for processing text and context
         self.rnn = nn.RNN(embedding_dim, hidden_dim, batch_first=True)
 
-        # Fully connected output layer
+        # Final classification layer (combining text and context)
+        # Hidden states from text and context RNNs are concatenated
         self.fc = nn.Linear(hidden_dim * 2, output_dim)
 
-    def load_glove_embeddings(self, vocab_size, embedding_dim):
-        """
-        Load GloVe embeddings into the model's embedding layer.
-        If the GloVe file doesn't exist, will use random embeddings instead.
-        """
-        from data import vocab  # Import vocab from data.py
-
-        # Path to GloVe embeddings - adjust as needed
-        glove_path = f'glove.6B.{embedding_dim}d.txt'
-
-        # If GloVe file doesn't exist, download it
-        if not os.path.exists(glove_path):
-            print(f"GloVe embeddings not found at {glove_path}.")
-            print("Using random embeddings instead of GloVe.")
-            print("To use GloVe embeddings, download them manually from:")
-            print("https://nlp.stanford.edu/data/glove.6B.zip")
-            print("Then extract and place the glove.6B.100d.txt file in your project directory.")
-            return
-
-        print(f"Loading GloVe embeddings from {glove_path}...")
-
-        # Initialize embeddings matrix
-        embeddings = np.random.uniform(-0.25, 0.25, (vocab_size, embedding_dim))
-        embeddings[0] = np.zeros((embedding_dim,))  # <PAD> token
-
-        # Load GloVe vectors
-        word_to_idx = {word: idx for idx, word in enumerate(vocab.keys())}
-
-        with open(glove_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                values = line.split()
-                word = values[0]
-
-                # Only load if word is in our vocabulary
-                if word in word_to_idx and word_to_idx[word] < vocab_size:
-                    vector = np.array(values[1:], dtype='float32')
-                    embeddings[word_to_idx[word]] = vector
-
-        # Load into embedding layer
-        self.embedding.weight.data.copy_(torch.FloatTensor(embeddings))
-        print("GloVe embeddings loaded successfully!")
-
     def forward(self, text, context):
-        # Get embeddings for text and context
-        text_embed = self.embedding(text)
-        context_embed = self.embedding(context)
+        """
+        Forward pass through the RNN model.
 
-        # Process text and context through RNN
-        _, text_hidden = self.rnn(text_embed)
-        _, context_hidden = self.rnn(context_embed)
+        Args:
+            text: Batch of tokenized texts [batch_size, seq_len]
+            context: Batch of tokenized contexts [batch_size, seq_len]
 
-        # Concatenate the final hidden states
-        combined = torch.cat((text_hidden.squeeze(0), context_hidden.squeeze(0)), dim=1)
+        Returns:
+            output: Sentiment predictions [batch_size, output_dim]
+        """
+        # Process text through embedding and RNN
+        text_embedded = self.embedding(text)  # [batch_size, seq_len, embedding_dim]
+        _, text_hidden = self.rnn(text_embedded)
+        # text_hidden shape: [1, batch_size, hidden_dim]
+        text_hidden = text_hidden.squeeze(0)  # [batch_size, hidden_dim]
 
-        # Pass through fully connected layer
-        return self.fc(combined)
+        # Process context through embedding and RNN
+        context_embedded = self.embedding(context)  # [batch_size, seq_len, embedding_dim]
+        _, context_hidden = self.rnn(context_embedded)
+        # context_hidden shape: [1, batch_size, hidden_dim]
+        context_hidden = context_hidden.squeeze(0)  # [batch_size, hidden_dim]
+
+        # Concatenate the final hidden states from text and context
+        combined = torch.cat((text_hidden, context_hidden), dim=1)
+        # combined shape: [batch_size, hidden_dim*2]
+
+        # Pass through final linear layer to get class predictions
+        return self.fc(combined)  # [batch_size, output_dim]
