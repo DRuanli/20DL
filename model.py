@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torchtext.vocab as vocab
+import os
+import time
+import sys
 
 
 class RNNModel(nn.Module):
@@ -26,7 +29,34 @@ class RNNModel(nn.Module):
         if pretrained:
             try:
                 print("Loading GloVe embeddings...")
-                glove = vocab.GloVe(name='6B', dim=embedding_dim)
+
+                # Set cache directory to current folder
+                # This helps avoid permission issues and makes download location explicit
+                cache_dir = os.path.join(os.getcwd(), '.vector_cache')
+                os.makedirs(cache_dir, exist_ok=True)
+                print(f"GloVe vectors will be stored in: {cache_dir}")
+
+                # Show downloading progress
+                print("This may take a few minutes the first time (downloading ~400MB)")
+                print("Progress: ", end="", flush=True)
+
+                start_time = time.time()
+
+                # Download/load the vectors with progress indicator
+                def progress_hook(t):
+                    # Only show progress every 5 seconds to avoid console spam
+                    elapsed = time.time() - progress_hook.last_time
+                    if elapsed > 5:
+                        progress_hook.last_time = time.time()
+                        print(".", end="", flush=True)
+
+                progress_hook.last_time = time.time()
+
+                # Load GloVe with timeout
+                glove = vocab.GloVe(name='6B', dim=embedding_dim, cache=cache_dir)
+
+                elapsed = time.time() - start_time
+                print(f"\nGloVe loaded in {elapsed:.2f} seconds")
 
                 # Check if vocab_size exceeds GloVe vocabulary size
                 if vocab_size > glove.vectors.shape[0]:
@@ -35,8 +65,13 @@ class RNNModel(nn.Module):
                 # Copy the first vocab_size vectors from GloVe
                 self.embedding.weight.data.copy_(glove.vectors[:vocab_size])
                 print(f"Successfully loaded pretrained GloVe embeddings.")
+
+            except KeyboardInterrupt:
+                print("\nGloVe download interrupted by user.")
+                print("Falling back to randomly initialized embeddings.")
+
             except Exception as e:
-                print(f"Error loading GloVe embeddings: {e}")
+                print(f"\nError loading GloVe embeddings: {e}")
                 print("Falling back to randomly initialized embeddings.")
 
         # RNN layer for processing text and context
