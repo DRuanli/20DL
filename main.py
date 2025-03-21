@@ -241,12 +241,12 @@ def display_results():
 
         # Display results table
         print_colored("Model Performance Comparison:", "bold")
-        print_colored("┌─────────────────┬────────────┬────────────┐", "cyan")
-        print_colored("│ Model           │ Accuracy   │ F1-score   │", "cyan")
-        print_colored("├─────────────────┼────────────┼────────────┤", "cyan")
-        print_colored(f"│ Pretrained GloVe │ {pre_acc:.4f}    │ {pre_f1:.4f}    │", "cyan")
-        print_colored(f"│ Scratch Embeddings │ {scratch_acc:.4f}    │ {scratch_f1:.4f}    │", "cyan")
-        print_colored("└─────────────────┴────────────┴────────────┘", "cyan")
+        print_colored("┌─────────────────────┬───────────────────┬───────────────────┐", "cyan")
+        print_colored("│ Model               │ Accuracy          │ F1-score          │", "cyan")
+        print_colored("├─────────────────────┼───────────────────┼───────────────────┤", "cyan")
+        print_colored(f"│ Pretrained GloVe    │ {pre_acc:.4f}      │ {pre_f1:.4f}      │", "cyan")
+        print_colored(f"│ Scratch Embeddings  │ {scratch_acc:.4f}  │ {scratch_f1:.4f}  │", "cyan")
+        print_colored("└─────────────────────┴───────────────────┴───────────────────┘", "cyan")
 
         # Display observation
         if "observation" in results:
